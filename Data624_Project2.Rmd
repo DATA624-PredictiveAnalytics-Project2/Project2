@@ -1,0 +1,95 @@
+---
+title: "Data624 - Project2"
+author: "Amanda Arce, Jatin Jain, Amit Kapoor"
+date: "5/2/2021"
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
+  html_document:
+    highlight: pygments
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE, fig.align = "center")
+```
+
+
+```{r libraries, include=FALSE}
+
+# Libraries
+library(readxl)
+library(tidyverse)
+
+set.seed(624)
+```
+
+
+# Overview
+
+ABC Beverage has new regulations in place and the leadership team requires the data scientists team to understand the  manufacturing process, the predictive factors and be able to report to them predictive model of PH.
+
+
+```{r data}
+
+temp.file <- tempfile(fileext = ".xlsx")
+download.file(url="https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentData.xlsx?raw=true", 
+              destfile = temp.file, 
+              mode = "wb", 
+              quiet = TRUE)
+
+# training data
+train.df <- read_excel(temp.file, skip=0)
+
+
+download.file(url="https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentEvaluation.xlsx?raw=true", 
+              destfile = temp.file, 
+              mode = "wb", 
+              quiet = TRUE)
+# test data
+test.df <- read_excel(temp.file, skip=0)
+```
+
+
+# Data Exploration
+
+```{r}
+glimpse(train.df)
+```
+
+
+
+# Data Preparation
+
+
+# Build Models
+
+
+
+# Select Model
+
+
+
+# Prediction
+
+
+
+# Conclusion
+
+
+
+
+# Code Appendix
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
+
+
+
+
+
