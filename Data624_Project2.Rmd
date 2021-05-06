@@ -3,29 +3,31 @@ title: "Data624 - Project2"
 author: "Amanda Arce, Jatin Jain, Amit Kapoor"
 date: "5/2/2021"
 output:
-  pdf_document:
-    latex_engine: xelatex
-    toc: yes
   html_document:
     highlight: pygments
     number_sections: no
     theme: flatly
     toc: yes
     toc_float: yes
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
 ---
 
+We tune a total of 6 models from the following categories of models:
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE, fig.align = "center")
-```
+  * Linear models: partial least square, elastic nets
+  * Non-linear models: k-nearest neighbors, support vector machine
+  * Tree-based models: random forest, gradient boosting machines
+  
 
 
 ```{r libraries, include=FALSE}
-
 # Libraries
 library(readxl)
 library(tidyverse)
-
+library(caret)
+library(doParallel)
 set.seed(624)
 ```
 
@@ -33,7 +35,6 @@ set.seed(624)
 # Overview
 
 ABC Beverage has new regulations in place and the leadership team requires the data scientists team to understand the  manufacturing process, the predictive factors and be able to report to them predictive model of PH.
-
 
 ```{r data}
 
@@ -62,12 +63,108 @@ test.df <- read_excel(temp.file, skip=0)
 glimpse(train.df)
 ```
 
-
+```{r}
+train.df
+```
 
 # Data Preparation
 
+The variable Brand Code is a categorical variable, having 4 classes (A, B, C, and D). We opt to use the “one-hot” encoding scheme for this variable, creating 5 new variables for the data: BrandCodeA, BrandCodeB, BrandCodeC, BrandCodeD, and BrandCodeNA.
+
+```{r}
+# One-hot encoding the categorical variable `Brand Code`
+
+train.df$`Brand Code` <- addNA(train.df$`Brand Code`)
+test.df$`Brand Code` <- addNA(test.df$`Brand Code`)
+brandCodeTrain <- predict(dummyVars(~`Brand Code`, data=train.df), train.df)
+brandCodeTest <- predict(dummyVars(~`Brand Code`, data=test.df), test.df)
+head(brandCodeTrain, 10)
+```
+
+```{r}
+head(train.df$`Brand Code`, 10)
+```
+
+```{r}
+head(brandCodeTest, 10)
+```
+
+```{r}
+head(test.df$`Brand Code`, 10)
+```
+
+```{r}
+train <- cbind(brandCodeTrain, subset(train.df, select=-c(`Brand Code`)))
+test <- cbind(brandCodeTest, subset(test.df, select=-c(`Brand Code`)))
+```
+
+White spaces and special characters in the column names are removed so they does not cause issues in some of the R packages.
+
+```{r}
+# Remove special symbols (white space and `) in names
+
+names(train) <- gsub(patter=c(' |`'), replacement='', names(train))
+names(test) <- gsub(patter=c(' |`'), replacement='', names(test))
+```
+
+
+There are a few rows with target variable (PH) missing. These rows are removed, since they cannot be used for training.
+
+```{r}
+# Remove rows in training set with missing target variables
+train <- train[complete.cases(train$PH),]
+```
+
+
+There is one near-zero-variance variable in the data:
+
+```{r}
+# Check near-zero-variance variables
+nearZeroVar(train, names=T)
+```
+
+
+Below, we remove the near-zero-variance predictor, and separate the predictors and target:
+
+```{r}
+# Separate the predictors and target, and remove nzv variable
+xTrain <- subset(train, select=-c(PH,`HydPressure1`)) %>% as.data.frame()
+xTest <- subset(test, select=-c(PH,`HydPressure1`)) %>% as.data.frame()
+yTrain <- train$PH
+```
+
+The train function from the caret package is used to tune the models. The 5-fold cross validation scheme is used to estimate the model performance based on their RMSE. Below, we create the folds and set up the train control:
+
+```{r}
+set.seed(1)
+cvFolds <- createFolds(yTrain, k=5)
+trControl <- trainControl(verboseIter=T,
+                          method='cv', 
+                          number=5,
+                          index=cvFolds)
+```                      
+                          
+For the missing values, we experiment with three different imputation algorithms provided in the preProcess function:
+
+  * KNN imputation
+  * Bagged trees imputation
+  * Median imputation
+  
+As will be seen in the “Linear Models” section below, the choice of imputation method does not seem to affect the prediction performance much. We opt to use the knnImpute method due to its high efficiency.
+
+For the linear and non-linear models, the pre-processing step also include centering and scaling (standardizing), so that the variables all have a mean of 0 and standard deviation of 1. For the tree-based models, this step is omitted, since tree models work fine without this step.
+
+The caret package supports parallel processing (multi-core training). This capability significantly lowers the training time:
+
+```{r}
+# Set up and start multi-core processing
+cl <- makePSOCKcluster(5)
+registerDoParallel(cl)
+```
+
 
 # Build Models
+
 
 
 

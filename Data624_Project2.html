@@ -57,7 +57,6 @@
 pre > code.sourceCode { white-space: pre; position: relative; }
 pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
@@ -330,12 +329,35 @@ div.tocify {
 </div>
 
 
+<p>We tune a total of 6 models from the following categories of models:</p>
+<ul>
+<li>Linear models: partial least square, elastic nets</li>
+<li>Non-linear models: k-nearest neighbors, support vector machine</li>
+<li>Tree-based models: random forest, gradient boosting machines</li>
+</ul>
 <div id="overview" class="section level1">
 <h1>Overview</h1>
 <p>ABC Beverage has new regulations in place and the leadership team requires the data scientists team to understand the manufacturing process, the predictive factors and be able to report to them predictive model of PH.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>temp.file <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.xlsx&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url=</span><span class="st">&quot;https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentData.xlsx?raw=true&quot;</span>, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> temp.file, </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">quiet =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># training data</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>train.df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(temp.file, <span class="at">skip=</span><span class="dv">0</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url=</span><span class="st">&quot;https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentEvaluation.xlsx?raw=true&quot;</span>, </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> temp.file, </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>              <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>, </span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>              <span class="at">quiet =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># test data</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>test.df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(temp.file, <span class="at">skip=</span><span class="dv">0</span>)</span></code></pre></div>
 </div>
 <div id="data-exploration" class="section level1">
 <h1>Data Exploration</h1>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(train.df)</span></code></pre></div>
 <pre><code>## Rows: 2,571
 ## Columns: 33
 ## $ `Brand Code`        &lt;chr&gt; &quot;B&quot;, &quot;A&quot;, &quot;B&quot;, &quot;A&quot;, &quot;A&quot;, &quot;A&quot;, &quot;A&quot;, &quot;B&quot;, &quot;B&quot;, &quot;B&quot;, …
@@ -371,9 +393,106 @@ div.tocify {
 ## $ `Alch Rel`          &lt;dbl&gt; 6.58, 6.56, 7.66, 7.14, 7.14, 7.16, 6.54, 6.52, 6.…
 ## $ `Carb Rel`          &lt;dbl&gt; 5.32, 5.30, 5.84, 5.42, 5.44, 5.44, 5.38, 5.34, 5.…
 ## $ `Balling Lvl`       &lt;dbl&gt; 1.48, 1.56, 3.28, 3.04, 3.04, 3.02, 1.44, 1.44, 1.…</code></pre>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>train.df</span></code></pre></div>
+<pre><code>## # A tibble: 2,571 x 33
+##    `Brand Code` `Carb Volume` `Fill Ounces` `PC Volume` `Carb Pressure`
+##    &lt;chr&gt;                &lt;dbl&gt;         &lt;dbl&gt;       &lt;dbl&gt;           &lt;dbl&gt;
+##  1 B                     5.34          24.0       0.263            68.2
+##  2 A                     5.43          24.0       0.239            68.4
+##  3 B                     5.29          24.1       0.263            70.8
+##  4 A                     5.44          24.0       0.293            63  
+##  5 A                     5.49          24.3       0.111            67.2
+##  6 A                     5.38          23.9       0.269            66.6
+##  7 A                     5.31          23.9       0.268            64.2
+##  8 B                     5.32          24.2       0.221            67.6
+##  9 B                     5.25          24.0       0.263            64.2
+## 10 B                     5.27          24.0       0.231            72  
+## # … with 2,561 more rows, and 28 more variables: Carb Temp &lt;dbl&gt;, PSC &lt;dbl&gt;,
+## #   PSC Fill &lt;dbl&gt;, PSC CO2 &lt;dbl&gt;, Mnf Flow &lt;dbl&gt;, Carb Pressure1 &lt;dbl&gt;,
+## #   Fill Pressure &lt;dbl&gt;, Hyd Pressure1 &lt;dbl&gt;, Hyd Pressure2 &lt;dbl&gt;,
+## #   Hyd Pressure3 &lt;dbl&gt;, Hyd Pressure4 &lt;dbl&gt;, Filler Level &lt;dbl&gt;,
+## #   Filler Speed &lt;dbl&gt;, Temperature &lt;dbl&gt;, Usage cont &lt;dbl&gt;, Carb Flow &lt;dbl&gt;,
+## #   Density &lt;dbl&gt;, MFR &lt;dbl&gt;, Balling &lt;dbl&gt;, Pressure Vacuum &lt;dbl&gt;, PH &lt;dbl&gt;,
+## #   Oxygen Filler &lt;dbl&gt;, Bowl Setpoint &lt;dbl&gt;, Pressure Setpoint &lt;dbl&gt;,
+## #   Air Pressurer &lt;dbl&gt;, Alch Rel &lt;dbl&gt;, Carb Rel &lt;dbl&gt;, Balling Lvl &lt;dbl&gt;</code></pre>
 </div>
 <div id="data-preparation" class="section level1">
 <h1>Data Preparation</h1>
+<p>The variable Brand Code is a categorical variable, having 4 classes (A, B, C, and D). We opt to use the “one-hot” encoding scheme for this variable, creating 5 new variables for the data: BrandCodeA, BrandCodeB, BrandCodeC, BrandCodeD, and BrandCodeNA.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># One-hot encoding the categorical variable `Brand Code`</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>train.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">addNA</span>(train.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>test.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">addNA</span>(test.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>brandCodeTrain <span class="ot">&lt;-</span> <span class="fu">predict</span>(<span class="fu">dummyVars</span>(<span class="sc">~</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="at">data=</span>train.df), train.df)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>brandCodeTest <span class="ot">&lt;-</span> <span class="fu">predict</span>(<span class="fu">dummyVars</span>(<span class="sc">~</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="at">data=</span>test.df), test.df)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(brandCodeTrain, <span class="dv">10</span>)</span></code></pre></div>
+<pre><code>##    `Brand Code`A `Brand Code`B `Brand Code`C `Brand Code`D `Brand Code`NA
+## 1              0             1             0             0              0
+## 2              1             0             0             0              0
+## 3              0             1             0             0              0
+## 4              1             0             0             0              0
+## 5              1             0             0             0              0
+## 6              1             0             0             0              0
+## 7              1             0             0             0              0
+## 8              0             1             0             0              0
+## 9              0             1             0             0              0
+## 10             0             1             0             0              0</code></pre>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(train.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="dv">10</span>)</span></code></pre></div>
+<pre><code>##  [1] B A B A A A A B B B
+## Levels: A B C D &lt;NA&gt;</code></pre>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(brandCodeTest, <span class="dv">10</span>)</span></code></pre></div>
+<pre><code>##    `Brand Code`A `Brand Code`B `Brand Code`C `Brand Code`D `Brand Code`NA
+## 1              0             0             0             1              0
+## 2              1             0             0             0              0
+## 3              0             1             0             0              0
+## 4              0             1             0             0              0
+## 5              0             1             0             0              0
+## 6              0             1             0             0              0
+## 7              1             0             0             0              0
+## 8              0             1             0             0              0
+## 9              1             0             0             0              0
+## 10             0             0             0             1              0</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(test.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="dv">10</span>)</span></code></pre></div>
+<pre><code>##  [1] D A B B B B A B A D
+## Levels: A B C D &lt;NA&gt;</code></pre>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(brandCodeTrain, <span class="fu">subset</span>(train.df, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(<span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)))</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(brandCodeTest, <span class="fu">subset</span>(test.df, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(<span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)))</span></code></pre></div>
+<p>White spaces and special characters in the column names are removed so they does not cause issues in some of the R packages.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove special symbols (white space and `) in names</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(train) <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="at">patter=</span><span class="fu">c</span>(<span class="st">&#39; |`&#39;</span>), <span class="at">replacement=</span><span class="st">&#39;&#39;</span>, <span class="fu">names</span>(train))</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(test) <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="at">patter=</span><span class="fu">c</span>(<span class="st">&#39; |`&#39;</span>), <span class="at">replacement=</span><span class="st">&#39;&#39;</span>, <span class="fu">names</span>(test))</span></code></pre></div>
+<p>There are a few rows with target variable (PH) missing. These rows are removed, since they cannot be used for training.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove rows in training set with missing target variables</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> train[<span class="fu">complete.cases</span>(train<span class="sc">$</span>PH),]</span></code></pre></div>
+<p>There is one near-zero-variance variable in the data:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check near-zero-variance variables</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nearZeroVar</span>(train, <span class="at">names=</span>T)</span></code></pre></div>
+<pre><code>## [1] &quot;BrandCodeNA&quot;  &quot;HydPressure1&quot;</code></pre>
+<p>Below, we remove the near-zero-variance predictor, and separate the predictors and target:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate the predictors and target, and remove nzv variable</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>xTrain <span class="ot">&lt;-</span> <span class="fu">subset</span>(train, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(PH,<span class="st">`</span><span class="at">HydPressure1</span><span class="st">`</span>)) <span class="sc">%&gt;%</span> <span class="fu">as.data.frame</span>()</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>xTest <span class="ot">&lt;-</span> <span class="fu">subset</span>(test, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(PH,<span class="st">`</span><span class="at">HydPressure1</span><span class="st">`</span>)) <span class="sc">%&gt;%</span> <span class="fu">as.data.frame</span>()</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>yTrain <span class="ot">&lt;-</span> train<span class="sc">$</span>PH</span></code></pre></div>
+<p>The train function from the caret package is used to tune the models. The 5-fold cross validation scheme is used to estimate the model performance based on their RMSE. Below, we create the folds and set up the train control:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>cvFolds <span class="ot">&lt;-</span> <span class="fu">createFolds</span>(yTrain, <span class="at">k=</span><span class="dv">5</span>)</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>trControl <span class="ot">&lt;-</span> <span class="fu">trainControl</span>(<span class="at">verboseIter=</span>T,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                          <span class="at">method=</span><span class="st">&#39;cv&#39;</span>, </span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                          <span class="at">number=</span><span class="dv">5</span>,</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>                          <span class="at">index=</span>cvFolds)</span></code></pre></div>
+<p>For the missing values, we experiment with three different imputation algorithms provided in the preProcess function:</p>
+<ul>
+<li>KNN imputation</li>
+<li>Bagged trees imputation</li>
+<li>Median imputation</li>
+</ul>
+<p>As will be seen in the “Linear Models” section below, the choice of imputation method does not seem to affect the prediction performance much. We opt to use the knnImpute method due to its high efficiency.</p>
+<p>For the linear and non-linear models, the pre-processing step also include centering and scaling (standardizing), so that the variables all have a mean of 0 and standard deviation of 1. For the tree-based models, this step is omitted, since tree models work fine without this step.</p>
+<p>The caret package supports parallel processing (multi-core training). This capability significantly lowers the training time:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set up and start multi-core processing</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>cl <span class="ot">&lt;-</span> <span class="fu">makePSOCKcluster</span>(<span class="dv">5</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">registerDoParallel</span>(cl)</span></code></pre></div>
 </div>
 <div id="build-models" class="section level1">
 <h1>Build Models</h1>
@@ -389,31 +508,64 @@ div.tocify {
 </div>
 <div id="code-appendix" class="section level1">
 <h1>Code Appendix</h1>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span>opts_chunk<span class="sc">$</span><span class="fu">set</span>(<span class="at">echo=</span><span class="cn">FALSE</span>, <span class="at">error=</span><span class="cn">FALSE</span>, <span class="at">warning=</span><span class="cn">FALSE</span>, <span class="at">message=</span><span class="cn">FALSE</span>, <span class="at">fig.align =</span> <span class="st">&quot;center&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Libraries</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">624</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>temp.file <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.xlsx&quot;</span>)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url=</span><span class="st">&quot;https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentData.xlsx?raw=true&quot;</span>, </span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> temp.file, </span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>, </span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>              <span class="at">quiet =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># training data</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>train.df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(temp.file, <span class="at">skip=</span><span class="dv">0</span>)</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url=</span><span class="st">&quot;https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentEvaluation.xlsx?raw=true&quot;</span>, </span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> temp.file, </span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>              <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>, </span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>              <span class="at">quiet =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="co"># test data</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>test.df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(temp.file, <span class="at">skip=</span><span class="dv">0</span>)</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(train.df)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Libraries</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(doParallel)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">624</span>)</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>temp.file <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.xlsx&quot;</span>)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url=</span><span class="st">&quot;https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentData.xlsx?raw=true&quot;</span>, </span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> temp.file, </span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>              <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>, </span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">quiet =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a><span class="co"># training data</span></span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a>train.df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(temp.file, <span class="at">skip=</span><span class="dv">0</span>)</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="at">url=</span><span class="st">&quot;https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentEvaluation.xlsx?raw=true&quot;</span>, </span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a>              <span class="at">destfile =</span> temp.file, </span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>              <span class="at">mode =</span> <span class="st">&quot;wb&quot;</span>, </span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a>              <span class="at">quiet =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a><span class="co"># test data</span></span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a>test.df <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(temp.file, <span class="at">skip=</span><span class="dv">0</span>)</span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(train.df)</span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a>train.df</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="co"># One-hot encoding the categorical variable `Brand Code`</span></span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a>train.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">addNA</span>(train.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a>test.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">addNA</span>(test.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)</span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>brandCodeTrain <span class="ot">&lt;-</span> <span class="fu">predict</span>(<span class="fu">dummyVars</span>(<span class="sc">~</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="at">data=</span>train.df), train.df)</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a>brandCodeTest <span class="ot">&lt;-</span> <span class="fu">predict</span>(<span class="fu">dummyVars</span>(<span class="sc">~</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="at">data=</span>test.df), test.df)</span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(brandCodeTrain, <span class="dv">10</span>)</span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(train.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="dv">10</span>)</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(brandCodeTest, <span class="dv">10</span>)</span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(test.df<span class="sc">$</span><span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>, <span class="dv">10</span>)</span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> <span class="fu">cbind</span>(brandCodeTrain, <span class="fu">subset</span>(train.df, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(<span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)))</span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a>test <span class="ot">&lt;-</span> <span class="fu">cbind</span>(brandCodeTest, <span class="fu">subset</span>(test.df, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(<span class="st">`</span><span class="at">Brand Code</span><span class="st">`</span>)))</span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove special symbols (white space and `) in names</span></span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(train) <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="at">patter=</span><span class="fu">c</span>(<span class="st">&#39; |`&#39;</span>), <span class="at">replacement=</span><span class="st">&#39;&#39;</span>, <span class="fu">names</span>(train))</span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(test) <span class="ot">&lt;-</span> <span class="fu">gsub</span>(<span class="at">patter=</span><span class="fu">c</span>(<span class="st">&#39; |`&#39;</span>), <span class="at">replacement=</span><span class="st">&#39;&#39;</span>, <span class="fu">names</span>(test))</span>
+<span id="cb22-42"><a href="#cb22-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove rows in training set with missing target variables</span></span>
+<span id="cb22-43"><a href="#cb22-43" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> train[<span class="fu">complete.cases</span>(train<span class="sc">$</span>PH),]</span>
+<span id="cb22-44"><a href="#cb22-44" aria-hidden="true" tabindex="-1"></a><span class="co"># Check near-zero-variance variables</span></span>
+<span id="cb22-45"><a href="#cb22-45" aria-hidden="true" tabindex="-1"></a><span class="fu">nearZeroVar</span>(train, <span class="at">names=</span>T)</span>
+<span id="cb22-46"><a href="#cb22-46" aria-hidden="true" tabindex="-1"></a><span class="co"># Separate the predictors and target, and remove nzv variable</span></span>
+<span id="cb22-47"><a href="#cb22-47" aria-hidden="true" tabindex="-1"></a>xTrain <span class="ot">&lt;-</span> <span class="fu">subset</span>(train, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(PH,<span class="st">`</span><span class="at">HydPressure1</span><span class="st">`</span>)) <span class="sc">%&gt;%</span> <span class="fu">as.data.frame</span>()</span>
+<span id="cb22-48"><a href="#cb22-48" aria-hidden="true" tabindex="-1"></a>xTest <span class="ot">&lt;-</span> <span class="fu">subset</span>(test, <span class="at">select=</span><span class="sc">-</span><span class="fu">c</span>(PH,<span class="st">`</span><span class="at">HydPressure1</span><span class="st">`</span>)) <span class="sc">%&gt;%</span> <span class="fu">as.data.frame</span>()</span>
+<span id="cb22-49"><a href="#cb22-49" aria-hidden="true" tabindex="-1"></a>yTrain <span class="ot">&lt;-</span> train<span class="sc">$</span>PH</span>
+<span id="cb22-50"><a href="#cb22-50" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb22-51"><a href="#cb22-51" aria-hidden="true" tabindex="-1"></a>cvFolds <span class="ot">&lt;-</span> <span class="fu">createFolds</span>(yTrain, <span class="at">k=</span><span class="dv">5</span>)</span>
+<span id="cb22-52"><a href="#cb22-52" aria-hidden="true" tabindex="-1"></a>trControl <span class="ot">&lt;-</span> <span class="fu">trainControl</span>(<span class="at">verboseIter=</span>T,</span>
+<span id="cb22-53"><a href="#cb22-53" aria-hidden="true" tabindex="-1"></a>                          <span class="at">method=</span><span class="st">&#39;cv&#39;</span>, </span>
+<span id="cb22-54"><a href="#cb22-54" aria-hidden="true" tabindex="-1"></a>                          <span class="at">number=</span><span class="dv">5</span>,</span>
+<span id="cb22-55"><a href="#cb22-55" aria-hidden="true" tabindex="-1"></a>                          <span class="at">index=</span>cvFolds)</span>
+<span id="cb22-56"><a href="#cb22-56" aria-hidden="true" tabindex="-1"></a><span class="co"># Set up and start multi-core processing</span></span>
+<span id="cb22-57"><a href="#cb22-57" aria-hidden="true" tabindex="-1"></a>cl <span class="ot">&lt;-</span> <span class="fu">makePSOCKcluster</span>(<span class="dv">5</span>)</span>
+<span id="cb22-58"><a href="#cb22-58" aria-hidden="true" tabindex="-1"></a><span class="fu">registerDoParallel</span>(cl)</span></code></pre></div>
 </div>
 
 
