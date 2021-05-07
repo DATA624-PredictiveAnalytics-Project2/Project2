@@ -22,12 +22,15 @@ We tune a total of 6 models from the following categories of models:
   
 
 
-```{r libraries, include=FALSE}
+```{r libraries, include=FALSE, warning=FALSE, message=FALSE}
 # Libraries
 library(readxl)
 library(tidyverse)
 library(caret)
 library(doParallel)
+library(DataExplorer)
+library(psych)
+
 set.seed(624)
 ```
 
@@ -59,13 +62,30 @@ test.df <- read_excel(temp.file, skip=0)
 
 # Data Exploration
 
-```{r}
+```{r, glimpse}
 glimpse(train.df)
 ```
 
+
 ```{r}
-train.df
+describe(train.df)
 ```
+
+
+
+
+
+```{r, hist}
+plot_histogram(train.df, geom_histogram_args = list("fill" = "tomato4"))
+```
+
+```{r, log10-hist}
+plot_histogram(train.df, scale_x = "log10", geom_histogram_args = list("fill" = "springgreen4"))
+```
+
+
+
+
 
 # Data Preparation
 
