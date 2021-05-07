@@ -4,6 +4,7 @@ author: "Amanda Arce, Jatin Jain, Amit Kapoor"
 date: "5/2/2021"
 output:
   html_document:
+    fig_width: 15
     highlight: pygments
     number_sections: no
     theme: flatly
@@ -20,6 +21,10 @@ We tune a total of 6 models from the following categories of models:
   * Non-linear models: k-nearest neighbors, support vector machine
   * Tree-based models: random forest, gradient boosting machines
   
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE, fig.align="center", fig.width = 15)
+```
 
 
 ```{r libraries, include=FALSE, warning=FALSE, message=FALSE}
@@ -57,6 +62,11 @@ download.file(url="https://github.com/DATA624-PredictiveAnalytics-Project2/Proje
               quiet = TRUE)
 # test data
 test.df <- read_excel(temp.file, skip=0)
+
+
+# transform Brand.code to factor
+train.df$`Brand Code` = as.factor(train.df$`Brand Code`)
+test.df$`Brand Code` = as.factor(test.df$`Brand Code`)
 ```
 
 
@@ -67,7 +77,7 @@ glimpse(train.df)
 ```
 
 
-```{r}
+```{r, desc}
 describe(train.df)
 ```
 
@@ -83,6 +93,26 @@ plot_histogram(train.df, geom_histogram_args = list("fill" = "tomato4"))
 plot_histogram(train.df, scale_x = "log10", geom_histogram_args = list("fill" = "springgreen4"))
 ```
 
+
+## Missing Data
+
+```{r, colsum}
+colSums(is.na(train.df))
+```
+
+
+```{r, pltmiss}
+plot_missing(train.df[-1])
+```
+
+
+
+## Correlation
+
+```{r, corr}
+forcorr <- train.df[complete.cases(train.df),-1]
+corrplot::corrplot(cor(forcorr), method = 'ellipse', type = 'lower')
+```
 
 
 
