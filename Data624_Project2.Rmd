@@ -264,6 +264,23 @@ predicted <- predict(xgb_model, xTest)
 table(predicted)
 
 
+```{r}
+#randomForest 
+# Testing on data set
+rf_model <- randomForest(x = xTrain, y = as.factor(yTrain), ntree = 500)
+
+xTest <- xTest %>% na.omit()
+
+predicted <- predict(rf_model, xTest)
+table(predicted)
+
+rf_varimp <- varImp(rf_model)
+rf_varimp
+varImpPlot(rf_model)
+
+```
+
+
 
 # Select Model
 
