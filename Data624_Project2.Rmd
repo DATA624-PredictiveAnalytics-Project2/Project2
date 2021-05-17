@@ -162,9 +162,12 @@ There are a few rows with target variable (PH) missing. These rows are removed, 
 
 ```{r}
 # Remove rows in training set with missing target variables
-train <- train[complete.cases(train$PH),]
+#train <- train[complete.cases(train$PH),] 
 ```
 
+```{r}
+train <- train %>% na.omit()
+```
 
 There is one near-zero-variance variable in the data:
 
