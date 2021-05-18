@@ -3,6 +3,9 @@ title: "Data624 - Project2"
 author: "Amanda Arce, Jatin Jain, Amit Kapoor"
 date: "5/2/2021"
 output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
   html_document:
     fig_width: 15
     highlight: pygments
@@ -10,9 +13,6 @@ output:
     theme: flatly
     toc: yes
     toc_float: yes
-  pdf_document:
-    latex_engine: xelatex
-    toc: yes
 ---
 
 
@@ -169,21 +169,20 @@ test.df.clean <- complete(test.df.clean)
 ```
 
 
-```{r}
-head(test.df.clean)
-```
 
 
 ## Create Dummy Variables
 The variable Brand Code is a categorical variable, having 4 classes (A, B, C, and D). For modeling, we got to convert into set of dummy variables. We will use `dummyVars` function for this purpose that creates a full set of dummy variables.
 
 ```{r dv-train}
+set.seed(317)
 dum.brandcode <- dummyVars(PH ~ Brand.Code, data = train.df.clean)
 dum.train.predict <- predict(dum.brandcode, train.df.clean)
 train.df.clean <- cbind(dum.train.predict, train.df.clean) %>% dplyr::select(-Brand.Code)
 ```
 
 ```{r dv-test}
+set.seed(317)
 dum.brandcode <- dummyVars( ~ Brand.Code, data = test.df.clean)
 dum.test.predict <- predict(dum.brandcode, test.df.clean)
 test.df.clean <- cbind(dum.test.predict, test.df.clean) %>% dplyr::select(-Brand.Code)
@@ -194,30 +193,52 @@ test.df.clean <- cbind(dum.test.predict, test.df.clean) %>% dplyr::select(-Brand
 ## Correlation
 Next step is to remove highly correlated predictor variables. we will use the cutoff as 0.90 here.
 
-```{r}
-colnames(train.df.clean)
-```
-
-
-```{r}
-head(train.df.clean)
-```
-
 
 ```{r}
 highCorr <- findCorrelation(cor(train.df.clean), 0.90)
 train.df.clean <- train.df.clean[, -highCorr]
 ```
 
-```{r}
-colnames(train.df.clean)
+
+## Preprocess using transformation
+
+In this step we will use caret `preprocess` method using transformation as `YeoJohnson` which applies Yeo-Johnson transformation, like a BoxCox, but values can be negative as well.
+
+```{r transform-train}
+set.seed(317)
+preproc_traindf <- preProcess(train.df.clean, method = "YeoJohnson")
+train.df.clean <- predict(preproc_traindf, train.df.clean)
+```
+
+```{r transform-test}
+set.seed(317)
+preproc_testdf <- preProcess(test.df.clean, method = "YeoJohnson")
+test.df.clean <- predict(preproc_testdf, test.df.clean)
 ```
 
 
+```{r}
+colnames(test.df.clean)
+```
+
 
 ## Training and Test Partition
+Finally in this step for data preparation we will partition the training dataset for training and validation using `createDataPartition` method from `caret` package. We will reserve 75% for training and rest 25% for validation purpose.
 
 
+```{r}
+set.seed(317)
+
+partition <- createDataPartition(train.df.clean$PH, p=0.75, list = FALSE)
+
+# training/validation partition for independent variables
+X.train <- train.df.clean[partition, ] %>% dplyr::select(-PH)
+X.test <- train.df.clean[-partition, ] %>% dplyr::select(-PH)
+
+# training/validation partition for dependent variable PH
+y.train <- train.df.clean$PH[partition]
+y.test <- train.df.clean$PH[-partition]
+```
 
 
 
@@ -410,6 +431,12 @@ set.seed(123)
 # Conclusion
 
 
+
+# References
+
+* https://machinelearningmastery.com/pre-process-your-dataset-in-r/
+* https://www.analyticsvidhya.com/blog/2016/03/tutorial-powerful-packages-imputing-missing-values/
+* Applied Predictive Modeling. Max Kuhn and Kjell Johnson
 
 
 # Code Appendix
