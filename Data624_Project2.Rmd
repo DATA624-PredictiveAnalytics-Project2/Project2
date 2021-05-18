@@ -15,16 +15,21 @@ output:
     toc: yes
 ---
 
-We tune a total of 6 models from the following categories of models:
-
-  * Linear models: partial least square, elastic nets
-  * Non-linear models: k-nearest neighbors, support vector machine
-  * Tree-based models: random forest, gradient boosting machines
-  
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE, fig.align="center", fig.width = 15)
+knitr::opts_chunk$set(echo=FALSE, error=FALSE, warning=FALSE, message=FALSE, fig.align="center", fig.width = 10)
 ```
+
+
+
+
+
+# Overview
+ABC Beverage has new regulations in place and the leadership team requires the data scientists team to understand the  manufacturing process, the predictive factors and be able to report to them predictive model of PH. The selection of model depends upon various factors like model accuracy, data relevance, cross validation etc.
+
+
+# R packages
+We will use `r` for data modeling. All packages used for data exploration, visualization, preparation and modeling are listed in Code Appendix.
 
 
 ```{r libraries, include=FALSE, warning=FALSE, message=FALSE}
@@ -40,27 +45,29 @@ set.seed(624)
 ```
 
 
-# Overview
 
-ABC Beverage has new regulations in place and the leadership team requires the data scientists team to understand the  manufacturing process, the predictive factors and be able to report to them predictive model of PH.
+# Data Exploration
+
+We will first get the historical dataset, provided in excel and use it to analyze and eventually predict the PH of beverages.
 
 ```{r data}
-
+# download training data from git repo
 temp.file <- tempfile(fileext = ".xlsx")
 download.file(url="https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentData.xlsx?raw=true", 
               destfile = temp.file, 
               mode = "wb", 
               quiet = TRUE)
 
-# training data
+# read excel for training data
 train.df <- read_excel(temp.file, skip=0)
 
-
+# download testing data from git repo
 download.file(url="https://github.com/DATA624-PredictiveAnalytics-Project2/Project2/blob/main/StudentEvaluation.xlsx?raw=true", 
               destfile = temp.file, 
               mode = "wb", 
               quiet = TRUE)
-# test data
+
+# read excel for testing data
 test.df <- read_excel(temp.file, skip=0)
 
 
@@ -69,8 +76,8 @@ train.df$`Brand Code` = as.factor(train.df$`Brand Code`)
 test.df$`Brand Code` = as.factor(test.df$`Brand Code`)
 ```
 
-
-# Data Exploration
+## Data summary
+There are 31 predictor variables that are numeric and 1 predictor variable `Brand Code` which is factor. The training dataset has 2,571 observations.
 
 ```{r, glimpse}
 glimpse(train.df)
@@ -78,23 +85,27 @@ glimpse(train.df)
 
 
 ```{r, desc}
-describe(train.df)
+describe(train.df) %>% dplyr::select(-vars, -trimmed, -mad, -se)
 ```
 
+Based of above description, we can see the dataset has missing values so it would need imputation. The predictors `Oxygen Filler`, `MFR`, `Filler Speed` and `Temperature` seems highly skewed and would require transformation. This could be seen in below histogram plots as well. 
 
-
-
+## Variables Distribution
+Below we have shown the distribution of dataset variables. There are 2 sets of histograms; the one in red is natural distribution and the ones in green are logarithmic disctribution
 
 ```{r, hist}
 plot_histogram(train.df, geom_histogram_args = list("fill" = "tomato4"))
 ```
 
 ```{r, log10-hist}
+# log histograms
 plot_histogram(train.df, scale_x = "log10", geom_histogram_args = list("fill" = "springgreen4"))
 ```
 
 
 ## Missing Data
+
+The summary and following graphs show the missing data in training dataset. The plot below shows more than 8% data is missing for `MFR` variable. Next feature that has missing data is `Filler Speed` which shows more than 2% missing data. The missing data will be handled through imputation.
 
 ```{r, colsum}
 colSums(is.na(train.df))
@@ -109,10 +120,26 @@ plot_missing(train.df[-1])
 
 ## Correlation
 
+below plot shows the correlation among numeric variables in the dataset. We can see few variables are highly correlated. We will handle the pairwise predictors that has correlation above 0.90 in data preparation section.
+
 ```{r, corr}
 forcorr <- train.df[complete.cases(train.df),-1]
 corrplot::corrplot(cor(forcorr), method = 'ellipse', type = 'lower')
 ```
+
+## Outliers
+In this section we will check the outliers in the data. An outlier is an observation that lies an unusual distance from other values in a random sample.These outlier could impact predictions so will be handled through imputation 
+
+```{r}
+
+# boxplot 
+par(mfrow = c(3,4))
+for(i in colnames(train.df[-1])){
+boxplot(train.df[,i], xlab = names(train.df[i]),
+  main = names(train.df[i]), col="blue", horizontal = T)
+}
+```
+
 
 
 
@@ -255,33 +282,38 @@ xgbGrid <- expand.grid(nrounds = c(100,200),  # this is n_estimators above
 
 set.seed(123) 
 
-xgb_model = train(
-  xTrain, as.factor(yTrain),  
-  trControl = xgb_trcontrol,
-  tuneGrid = xgbGrid,
-  method = "xgbTree"
-)
+#xgb_model = train(
+#  xTrain, as.factor(yTrain),  
+#  trControl = xgb_trcontrol,
+#  tuneGrid = xgbGrid,
+#  method = "xgbTree"
+#)
 
 # Testing against data set.
-predicted <- predict(xgb_model, xTest)
-table(predicted)
+#predicted <- predict(xgb_model, xTest)
+#table(predicted)
 
 
-```{r}
+
 #randomForest 
 # Testing on data set
-rf_model <- randomForest(x = xTrain, y = as.factor(yTrain), ntree = 500)
+#rf_model <- randomForest(x = xTrain, y = as.factor(yTrain), ntree = 500)
 
-xTest <- xTest %>% na.omit()
+#xTest <- xTest %>% na.omit()
 
-predicted <- predict(rf_model, xTest)
-table(predicted)
+#predicted <- predict(rf_model, xTest)
+#table(predicted)
 
-rf_varimp <- varImp(rf_model)
-rf_varimp
-varImpPlot(rf_model)
+#rf_varimp <- varImp(rf_model)
+#rf_varimp
+#varImpPlot(rf_model)
 
 ```
+
+
+
+
+
 
 
 
