@@ -41,10 +41,22 @@ library(doParallel)
 library(DataExplorer)
 library(psych)
 library(mice)
+library(MASS)
+library(caret)
+library(AppliedPredictiveModeling)
+library(lars)
+library(pls) 
+library(earth)
+library(xgboost)
+library(Cubist)
+library(randomForest)
 
 set.seed(624)
 ```
 
+```{r}
+
+```
 
 
 # Data Exploration
@@ -348,15 +360,7 @@ registerDoParallel(cl)
 
 
 # Build Models
-```{r}
-library(MASS)
-library(caret)
-library(AppliedPredictiveModeling)
-library(lars)
-library(pls) 
-library(nnet)
-library(randomForest)
-```
+
 
 
 
@@ -438,7 +442,7 @@ pls_model <- train(x=X.train,
                  y=y.train,
                  method="pls",
                  metric="Rsquared",
-                 tuneLength=15, 
+                 tuneLength=10, 
                  trControl=trainControl(method = "cv")
                  )
 
@@ -503,7 +507,7 @@ set.seed(317)
 svm_model <- train(x=X.train, 
                    y=y.train,
                    method = "svmRadial",
-                   tuneLength = 15,
+                   tuneLength = 10,
                    trControl = trainControl(method = "cv"))
 
 svm_model
@@ -567,9 +571,9 @@ set.seed(317)
 
 # boosting regression trees via stochastic gradient boosting machines
 
-gbmGrid <- expand.grid(interaction.depth = seq(1, 7, by = 2), 
-                       n.trees = seq(100, 1000, by = 50), 
-                       shrinkage = c(0.01, 0.1),
+gbmGrid <- expand.grid(interaction.depth = c(5,10), 
+                       n.trees = seq(100, 1000, by = 100), 
+                       shrinkage = 0.1,
                        n.minobsinnode = c(5,10))
 
 gbm_model <- train(x=X.train,
@@ -605,7 +609,7 @@ set.seed(317)
 rf_model <- train(x=X.train,
                   y=y.train,
                   method = "rf",
-                  tuneLength = 15,
+                  tuneLength = 10,
                   trControl = trainControl(method = "cv"))
 
 rf_model
@@ -627,11 +631,122 @@ data.frame(Rsquared=rf_model[["results"]][["Rsquared"]][as.numeric(rownames(rf_m
 
 ### Cubist
 
+```{r cubist, warning=FALSE, message=FALSE}
+set.seed(317)
+
+cubist_model <- train(x=X.train,
+                      y=y.train,
+                      method = "cubist",
+                      tuneLength = 10,
+                      trControl = trainControl(method = "cv"))
+
+cubist_model
+```
+
+
+```{r}
+cubist_model$bestTune
+```
+
+```{r}
+plot(cubist_model)
+```
+
+
+
+```{r}
+data.frame(Rsquared=cubist_model[["results"]][["Rsquared"]][as.numeric(rownames(cubist_model$bestTune))],
+           RMSE=cubist_model[["results"]][["RMSE"]][as.numeric(rownames(cubist_model$bestTune))])
+```
+
+### XGB Tree
+
+```{r xgb, warning=FALSE, message=FALSE}
+set.seed(123) 
+
+xgb_trcontrol <- trainControl(
+  method = "cv",
+  number = 5,  
+  allowParallel = TRUE,
+  verboseIter = FALSE,
+  returnData = FALSE
+)
+
+# Setting up a grid search for the best parameters
+xgbGrid <- expand.grid(nrounds = c(100,200),  # this is n_estimators above
+                       max_depth = c(10, 15, 20, 25),
+                       colsample_bytree = seq(0.5, 0.9, length.out = 5),
+                       eta = 0.1,
+                       gamma=0,
+                       min_child_weight = 1,
+                       subsample = 1
+                      )
+
+
+
+xgb_model <- train(x=X.train,
+                  y=y.train,
+                  method = "xgbTree",
+                  trControl = xgb_trcontrol,
+                  tuneGrid = xgbGrid)
+
+xgb_model
+```
+
+
+```{r}
+xgb_model$bestTune
+```
+
+```{r}
+plot(xgb_model)
+```
+
+
+
+```{r}
+data.frame(Rsquared=xgb_model[["results"]][["Rsquared"]][as.numeric(rownames(xgb_model$bestTune))],
+           RMSE=xgb_model[["results"]][["RMSE"]][as.numeric(rownames(xgb_model$bestTune))])
+```
 
 
 # Select Model
 
+```{r}
+set.seed(317)
+summary(resamples(list(PLS=pls_model, MARS=mars_model, SVM=svm_model, RandFrst=rf_model,  Cubist=cubist_model, SingTree=st_model,Boosting=gbm_model)))
+#Boosting=gbm_model , XGB=xgb_model
+```
 
+
+```{r bwplot}
+bwplot(resamples(list(PLS=pls.fit, MARS=mars_model, SVM=svm_model, RandFrst=rf_model,  Cubist=cubist_model, SingTree=st_model, Boosting=gbm_model)), main = "Models Comparison")
+```
+
+
+
+
+
+
+```{r prediction}
+set.seed(317)
+
+pls_pred <- predict(pls_model, newdata = X.test)
+mars_pred <- predict(mars_model, newdata = X.test)
+svm_pred <- predict(svm_model, newdata = X.test)
+rf_pred <- predict(rf_model, newdata = X.test)
+cubist_pred <- predict(cubist_model, newdata = X.test)
+st_pred<- predict(st_model, newdata = X.test)
+gbm_pred <- predict(gbm_model, newdata = X.test)
+
+data.frame(rbind(PLS=postResample(pred=pls_pred,obs = y.test),
+                 MARS=postResample(pred=mars_pred,obs = y.test),
+                 SVM=postResample(pred=svm_pred,obs = y.test),
+                 SingTree=postResample(pred=st_pred,obs = y.test),
+                 RandFrst=postResample(pred=rf_pred,obs = y.test),
+                 Boosting=postResample(pred=gbm_pred,obs = y.test),
+                 Cubist=postResample(pred=cubist_pred,obs = y.test)))
+```
 
 # Prediction
 
