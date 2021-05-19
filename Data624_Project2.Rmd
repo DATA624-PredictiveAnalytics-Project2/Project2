@@ -3,9 +3,6 @@ title: "Data624 - Project2"
 author: "Amanda Arce, Jatin Jain, Amit Kapoor"
 date: "5/2/2021"
 output:
-  pdf_document:
-    latex_engine: xelatex
-    toc: yes
   html_document:
     fig_width: 15
     highlight: pygments
@@ -13,6 +10,9 @@ output:
     theme: flatly
     toc: yes
     toc_float: yes
+  pdf_document:
+    latex_engine: xelatex
+    toc: yes
 ---
 
 
@@ -415,8 +415,217 @@ set.seed(123)
 
 
 
+## Linear Regression
 
 
+### Simple Linear Regression
+
+
+```{r}
+set.seed(317)
+
+lm_model <- lm(y.train ~ ., data = X.train)
+summary(lm_model)
+```
+
+
+### Partial Least Squares
+
+
+```{r}
+# tune pls model 
+pls_model <- train(x=X.train,
+                 y=y.train,
+                 method="pls",
+                 metric="Rsquared",
+                 tuneLength=15, 
+                 trControl=trainControl(method = "cv")
+                 )
+
+pls_model
+```
+
+```{r}
+plot(pls_model)
+```
+
+```{r}
+pls_model$results %>% 
+  filter(ncomp == pls_model$bestTune$ncomp) %>% 
+  dplyr::select(ncomp,RMSE,Rsquared)
+```
+
+
+## Non Linear Regression
+
+### MARS
+MARS creates a piecewise linear model which provides an intuitive stepping block into non-linearity after grasping the concept of multiple linear regression. MARS provided a convenient approach to capture the nonlinear relationships in the data by assessing cutpoints (knots) similar to step functions. The procedure assesses each data point for each predictor as a knot and creates a linear regression model with the candidate features
+
+```{r mars, warning=FALSE, message=FALSE}
+set.seed(317)
+marsGrid <- expand.grid(.degree=1:2, .nprune=2:30)
+mars_model <- train(x=X.train, 
+                    y=y.train,
+                    method = "earth",
+                    tuneGrid = marsGrid,
+                    trControl = trainControl(method = "cv"))
+
+```
+
+
+```{r}
+# final parameters
+mars_model$bestTune
+```
+
+```{r}
+# plot RMSE
+plot(mars_model)
+```
+
+```{r}
+summary(mars_model$finalModel)
+```
+
+```{r}
+data.frame(Rsquared=mars_model[["results"]][["Rsquared"]][as.numeric(rownames(mars_model$bestTune))],
+           RMSE=mars_model[["results"]][["RMSE"]][as.numeric(rownames(mars_model$bestTune))])
+```
+
+
+
+
+### Support Vector Machines
+The objective of the support vector machine algo is to find a hyperplane in an N-dimensional space (N being the number of features) that classifies the data points. Here we will use training using svmRadial method
+
+```{r svm, warning=FALSE, message=FALSE}
+set.seed(317)
+svm_model <- train(x=X.train, 
+                   y=y.train,
+                   method = "svmRadial",
+                   tuneLength = 15,
+                   trControl = trainControl(method = "cv"))
+
+svm_model
+```
+
+```{r}
+summary(svm_model$finalModel)
+```
+
+
+```{r}
+# plot RMSE
+plot(svm_model)
+```
+
+```{r}
+data.frame(Rsquared=svm_model[["results"]][["Rsquared"]][as.numeric(rownames(svm_model$bestTune))],
+           RMSE=svm_model[["results"]][["RMSE"]][as.numeric(rownames(svm_model$bestTune))])
+```
+
+## Trees
+
+### Single Tree
+
+```{r st, warning=FALSE, message=FALSE}
+set.seed(317)
+
+st_model <- train(x=X.train,
+                  y=y.train,
+                  method = "rpart",
+                  tuneLength = 10,
+                  trControl = trainControl(method = "cv"))
+
+st_model
+```
+
+```{r}
+st_model$bestTune
+```
+
+
+
+```{r}
+# plot RMSE
+plot(st_model)
+```
+
+
+```{r}
+data.frame(Rsquared=st_model[["results"]][["Rsquared"]][as.numeric(rownames(st_model$bestTune))],
+           RMSE=st_model[["results"]][["RMSE"]][as.numeric(rownames(st_model$bestTune))])
+```
+
+
+
+
+### Bossted Tree
+
+```{r gbm, warning=FALSE, message=FALSE}
+set.seed(317)
+
+# boosting regression trees via stochastic gradient boosting machines
+
+gbmGrid <- expand.grid(interaction.depth = seq(1, 7, by = 2), 
+                       n.trees = seq(100, 1000, by = 50), 
+                       shrinkage = c(0.01, 0.1),
+                       n.minobsinnode = c(5,10))
+
+gbm_model <- train(x=X.train,
+                   y=y.train,
+                   method = "gbm",
+                   tuneGrid = gbmGrid, 
+                   trControl = trainControl(method = "cv"),
+                   verbose = FALSE)
+
+gbm_model
+```
+
+
+```{r}
+gbm_model$bestTune
+```
+
+```{r}
+plot(gbm_model)
+```
+
+```{r}
+data.frame(Rsquared=gbm_model[["results"]][["Rsquared"]][as.numeric(rownames(gbm_model$bestTune))],
+           RMSE=gbm_model[["results"]][["RMSE"]][as.numeric(rownames(gbm_model$bestTune))])
+```
+
+
+### Random Forest
+
+```{r rf, warning=FALSE, message=FALSE}
+set.seed(317)
+
+rf_model <- train(x=X.train,
+                  y=y.train,
+                  method = "rf",
+                  tuneLength = 15,
+                  trControl = trainControl(method = "cv"))
+
+rf_model
+```
+
+
+```{r}
+rf_model$bestTune
+```
+
+```{r}
+plot(rf_model)
+```
+
+```{r}
+data.frame(Rsquared=rf_model[["results"]][["Rsquared"]][as.numeric(rownames(rf_model$bestTune))],
+           RMSE=rf_model[["results"]][["RMSE"]][as.numeric(rownames(rf_model$bestTune))])
+```
+
+### Cubist
 
 
 
