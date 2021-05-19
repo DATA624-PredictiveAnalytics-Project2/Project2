@@ -50,6 +50,7 @@ library(earth)
 library(xgboost)
 library(Cubist)
 library(randomForest)
+library(DT)
 
 set.seed(624)
 ```
@@ -720,7 +721,7 @@ summary(resamples(list(PLS=pls_model, MARS=mars_model, SVM=svm_model, RandFrst=r
 
 
 ```{r bwplot}
-bwplot(resamples(list(PLS=pls.fit, MARS=mars_model, SVM=svm_model, RandFrst=rf_model,  Cubist=cubist_model, SingTree=st_model, Boosting=gbm_model)), main = "Models Comparison")
+bwplot(resamples(list(PLS=pls_model, MARS=mars_model, SVM=svm_model, RandFrst=rf_model,  Cubist=cubist_model, SingTree=st_model, Boosting=gbm_model)), main = "Models Comparison")
 ```
 
 
@@ -750,6 +751,27 @@ data.frame(rbind(PLS=postResample(pred=pls_pred,obs = y.test),
 
 # Prediction
 
+
+```{r}
+head(test.df.clean)
+```
+
+```{r pred-PH}
+# remove PH from evaluation data
+test.df.clean <- test.df.clean %>% dplyr::select(-PH)
+
+# predict final PH values
+test.df.clean$PH <- predict(rf_model, newdata = test.df.clean)
+```
+
+```{r}
+# PH predictions
+test.df.clean$PH %>% tibble::enframe(name = NULL) %>% datatable()
+```
+
+```{r save-PH}
+write.csv(test.df.clean$PH, "StudentEvaluations_PHPredictions.csv")
+```
 
 
 # Conclusion
